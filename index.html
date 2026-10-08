@@ -1,0 +1,1507 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>داش بورد شكاوى العملاء | SPG</title>
+<link rel="icon" type="image/png" href="logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{
+  --bg:#eef1f5; --card:#ffffff; --card-2:#f6f8fb; --ink:#1b2430; --ink-2:#4a5565; --ink-3:#7b8594;
+  --line:#dfe4ea; --grid:#e9edf2; --accent:#118DFF; --accent-soft:#e3f1ff;
+  --closed:#118DFF; --open:#8DC6F5; --danger:#d64550; --warn:#e6a23c; --ok:#1a9e5c;
+  --shadow:0 1px 2px rgba(16,24,40,.06),0 1px 3px rgba(16,24,40,.08);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0f141b; --card:#18202a; --card-2:#1e2833; --ink:#e8edf3; --ink-2:#b4beca; --ink-3:#8590a0;
+    --line:#2a3542; --grid:#25303c; --accent:#3aa0ff; --accent-soft:#16304a;
+    --closed:#2b9bff; --open:#7cb9ec; --shadow:none;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0f141b; --card:#18202a; --card-2:#1e2833; --ink:#e8edf3; --ink-2:#b4beca; --ink-3:#8590a0;
+  --line:#2a3542; --grid:#25303c; --accent:#3aa0ff; --accent-soft:#16304a;
+  --closed:#2b9bff; --open:#7cb9ec; --shadow:none;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:Tajawal,"Segoe UI",Tahoma,sans-serif;font-size:14px;line-height:1.5}
+button,input,select{font:inherit;color:inherit}
+.wrap{max-width:1600px;margin:0 auto;padding:16px}
+header.top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.brand{display:flex;align-items:center;gap:14px}
+.brand .logo{height:58px;width:auto;display:block;flex-shrink:0}
+@media (max-width:600px){.brand .logo{height:42px}}
+header.top h1{margin:0;font-size:22px;font-weight:800}
+header.top .sub{color:var(--ink-3);font-size:13px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow)}
+.btn{border:1px solid var(--line);background:var(--card);border-radius:8px;padding:7px 14px;cursor:pointer;white-space:nowrap}
+.btn:hover{border-color:var(--accent);color:var(--accent)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.primary:hover{filter:brightness(1.08);color:#fff}
+.btn.sm{padding:4px 10px;font-size:12px}
+
+/* data source */
+.source{padding:12px 14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+.source label{font-weight:700;white-space:nowrap}
+.source input[type=text]{flex:1 1 380px;min-width:0;border:1px solid var(--line);background:var(--card-2);border-radius:8px;padding:7px 10px;direction:ltr;text-align:left}
+.source .meta{flex-basis:100%;color:var(--ink-3);font-size:12.5px;display:flex;gap:14px;flex-wrap:wrap}
+.source .meta b{color:var(--ink-2);font-weight:600}
+.sheets{flex-basis:100%;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.sheets:empty{display:none}
+.sheets .lbl{font-weight:700;font-size:13px}
+.sheet{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--accent);background:var(--accent-soft);border-radius:999px;padding:3px 12px;cursor:pointer;font-size:13px;font-weight:600}
+.sheet small{color:var(--ink-3);font-weight:400}
+.sheet.off{border-color:var(--line);background:transparent;color:var(--ink-3);font-weight:400}
+.sheet:has(input:disabled){cursor:not-allowed;opacity:.7}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.rep-opts label{display:flex;gap:8px;align-items:center;padding:5px 0;cursor:pointer}
+.rep-opts input[type=text]{width:100%;border:1px solid var(--line);background:var(--card-2);border-radius:8px;padding:7px 10px;margin-top:4px}
+.toggle{display:inline-flex;align-items:center;gap:6px;color:var(--ink-2);font-size:13px;cursor:pointer;white-space:nowrap}
+#msg{display:none;padding:9px 14px;border-radius:8px;margin-bottom:12px;font-size:13.5px}
+#msg.error{display:block;background:#fdecee;color:#9b1c28;border:1px solid #f5c2c7}
+#msg.info{display:block;background:var(--accent-soft);color:var(--ink);border:1px solid var(--line)}
+
+/* filters */
+.filters{padding:12px 14px;margin-bottom:12px}
+.filters .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:10px}
+.filters .f label{display:block;font-size:12px;color:var(--ink-3);margin-bottom:3px}
+.filters select{width:100%;border:1px solid var(--line);background:var(--card-2);border-radius:7px;padding:6px 8px}
+.filters select.active{border-color:var(--accent);background:var(--accent-soft)}
+.range{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding-bottom:10px;margin-bottom:10px;border-bottom:1px dashed var(--line)}
+.range input[type=date],.range select,.rep-range input,.rep-range select{border:1px solid var(--line);background:var(--card-2);border-radius:7px;padding:5px 8px}
+.range.on input[type=date]{border-color:var(--accent);background:var(--accent-soft)}
+.rep-range{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:4px 0 10px}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;align-items:center}
+.chip{background:var(--accent-soft);border:1px solid var(--accent);color:var(--ink);border-radius:999px;padding:2px 6px 2px 10px;font-size:12.5px;display:inline-flex;gap:6px;align-items:center}
+.chip button{border:0;background:transparent;cursor:pointer;font-size:14px;line-height:1;color:var(--ink-2);padding:0 2px}
+.hint{color:var(--ink-3);font-size:12px}
+
+/* kpis */
+.kpis{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:10px;margin-bottom:12px}
+.kpi{padding:12px 14px;position:relative;overflow:hidden}
+.kpi::before{content:"";position:absolute;inset-inline-start:0;top:0;bottom:0;width:4px;background:var(--k,var(--accent))}
+.kpi .l{color:var(--ink-3);font-size:12.5px}
+.kpi .v{font-size:28px;font-weight:800;line-height:1.2;font-variant-numeric:tabular-nums}
+.kpi .v.txt{font-size:17px;line-height:1.35;padding-top:4px;word-break:break-word}
+.kpi .s{color:var(--ink-3);font-size:12px}
+
+/* panels */
+.row{display:grid;gap:12px;margin-bottom:12px}
+.r-21{grid-template-columns:2fr 1fr}
+.r-3{grid-template-columns:repeat(3,1fr)}
+.r-2{grid-template-columns:1fr 1fr}
+.panel{padding:12px 14px;min-width:0}
+.panel h3{margin:0 0 2px;font-size:15px;font-weight:700;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.panel .ph{color:var(--ink-3);font-size:12px;margin-bottom:8px}
+.ch{position:relative;height:340px}
+.ch.sm{height:260px}
+.scroll-x{overflow-x:auto;overflow-y:hidden;padding-bottom:4px}
+.scroll-x .ch{min-width:100%}
+@media (max-width:1100px){.r-21,.r-3{grid-template-columns:1fr 1fr}}
+@media (max-width:820px){.r-21,.r-3,.r-2{grid-template-columns:1fr}}
+
+/* matrix */
+.mx-wrap{overflow:auto;max-height:520px;border:1px solid var(--line);border-radius:8px}
+table.mx{border-collapse:separate;border-spacing:0;font-size:12.5px;min-width:100%}
+table.mx th,table.mx td{border-bottom:1px solid var(--grid);border-inline-start:1px solid var(--grid);padding:5px 7px;text-align:center;white-space:nowrap}
+table.mx thead th{position:sticky;top:0;background:var(--card-2);z-index:2;font-weight:600;white-space:normal;min-width:64px;max-width:120px;vertical-align:bottom}
+table.mx th.rh{position:sticky;inset-inline-start:0;background:var(--card-2);z-index:1;text-align:start;font-weight:600;max-width:220px;overflow:hidden;text-overflow:ellipsis}
+table.mx thead th.rh{z-index:3}
+table.mx td{cursor:pointer;font-variant-numeric:tabular-nums}
+table.mx td.z{color:transparent;cursor:default}
+table.mx td.tot,table.mx tr.tot td,table.mx th.tot{font-weight:700;background:var(--card-2)}
+table.mx tr.sel th.rh,table.mx th.sel{color:var(--accent)}
+table.mx td.selc{outline:2px solid var(--accent);outline-offset:-2px}
+
+/* tables */
+.tbl-tools{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px}
+.tbl-tools input{flex:1 1 260px;border:1px solid var(--line);background:var(--card-2);border-radius:8px;padding:7px 10px}
+.tbl-wrap{overflow:auto;border:1px solid var(--line);border-radius:8px}
+table.dt{border-collapse:collapse;width:100%;font-size:13px}
+table.dt th,table.dt td{padding:7px 9px;border-bottom:1px solid var(--grid);text-align:start;white-space:nowrap;max-width:260px;overflow:hidden;text-overflow:ellipsis}
+table.dt th{background:var(--card-2);position:sticky;top:0;font-weight:700;cursor:pointer;user-select:none}
+table.dt th .ar{color:var(--accent);font-size:11px}
+table.dt tbody tr{cursor:pointer}
+table.dt tbody tr:hover{background:var(--accent-soft)}
+.badge{display:inline-block;padding:1px 9px;border-radius:999px;font-size:12px;font-weight:600;color:#fff}
+.badge.closed{background:var(--closed)}
+.badge.open{background:#e6a23c}
+.badge.other{background:#8a94a6}
+.pager{display:flex;gap:8px;align-items:center;justify-content:space-between;margin-top:8px;color:var(--ink-3);font-size:12.5px;flex-wrap:wrap}
+.age-hi{color:var(--danger);font-weight:700}
+
+body.web .srv-only, body:not(.web) .web-only{display:none !important}
+/* welcome */
+#welcome{padding:28px;text-align:center}
+#welcome h2{margin:0 0 6px}
+#welcome ol{display:inline-block;text-align:start;color:var(--ink-2);margin:8px 0 0}
+#dash{display:none}
+
+/* modal */
+.modal{position:fixed;inset:0;background:rgba(10,15,25,.5);display:none;align-items:center;justify-content:center;padding:16px;z-index:50}
+.modal.show{display:flex}
+.modal .box{background:var(--card);border-radius:12px;max-width:820px;width:100%;max-height:88vh;overflow:auto;padding:18px 20px;border:1px solid var(--line)}
+.modal h3{margin:0 0 12px;display:flex;justify-content:space-between;align-items:center}
+.kv{display:grid;grid-template-columns:200px 1fr;gap:0;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.kv div{padding:7px 10px;border-bottom:1px solid var(--grid)}
+.kv .k{background:var(--card-2);color:var(--ink-2);font-weight:600}
+.kv .v{white-space:pre-wrap;word-break:break-word}
+@media (max-width:600px){.kv{grid-template-columns:1fr}.kv .k{border-bottom:0}}
+.empty{color:var(--ink-3);text-align:center;padding:30px 0}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <img src="logo.png" alt="SPG" class="logo">
+      <div>
+        <h1>داش بورد شكاوى العملاء</h1>
+        <div class="sub">مجموعة الورق السعودية SPG — إدارة خدمة العملاء — تحليل الشكاوى لفرعي SPM و SPC</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn primary" id="reportBtn" disabled title="إصدار تقرير PDF ملخص للبيانات المعروضة">📄 تقرير PDF</button>
+      <button class="btn" id="themeBtn" title="الوضع الليلي / النهاري">◐ المظهر</button>
+    </div>
+  </header>
+
+  <section class="card source">
+    <label for="path" class="srv-only">مسار ملف الإكسل:</label>
+    <input type="text" id="path" class="srv-only" placeholder="C:\Users\...\Customer Complaints.xlsx" spellcheck="false">
+    <button class="btn primary srv-only" id="connectBtn">ربط وتحميل</button>
+    <label class="web-only">ملف الإكسل:</label>
+    <button class="btn primary" id="pickBtn">📂 اختيار ملف الإكسل</button>
+    <button class="btn" id="reloadBtn">تحديث البيانات</button>
+    <input type="file" id="fileInput" accept=".xlsx,.xlsm,.xls,.xlsb,.csv" hidden>
+    <label class="toggle"><input type="checkbox" id="autoRef" checked> تحديث تلقائي عند تعديل الملف</label>
+    <div class="meta" id="meta"></div>
+    <div class="sheets" id="sheetPicker"></div>
+  </section>
+  <div id="msg"></div>
+
+  <section class="card" id="welcome">
+    <h2>اربط ملف الإكسل لعرض البيانات</h2>
+    <ol class="srv-only">
+      <li>انسخ مسار ملف الشكاوى (كليك يمين على الملف ← نسخ كمسار) والصقه في الخانة بالأعلى.</li>
+      <li>اضغط <b>ربط وتحميل</b> — سيتم قراءة جميع الشيتات (SPM و SPC) تلقائياً.</li>
+      <li>المسار يُحفظ، وعند تعديل الملف وحفظه تتحدث اللوحة تلقائياً.</li>
+    </ol>
+    <ol class="web-only">
+      <li>اضغط <b>📂 اختيار ملف الإكسل</b> واختر ملف الشكاوى من جهازك (أو من مجلد OneDrive / الشبكة).</li>
+      <li>سيتم قراءة جميع الشيتات (SPM و SPC) تلقائياً.</li>
+      <li>المتصفح يتذكر الملف، وعند تعديله وحفظه تتحدث اللوحة تلقائياً (Chrome / Edge).</li>
+    </ol>
+    <p class="hint web-only">🔒 الملف يُقرأ داخل متصفحك فقط — لا يتم رفع أي بيانات إلى GitHub أو أي سيرفر.</p>
+    <p class="web-only" id="reopenBox" style="display:none;margin-top:14px"><button class="btn primary" id="reopenBtn"></button></p>
+  </section>
+
+  <div id="dash">
+    <section class="card filters">
+      <div class="range" id="rangeBar">
+        <b>📅 الفترة</b>
+        <span>من</span><input type="date" id="rFrom">
+        <span>إلى</span><input type="date" id="rTo">
+        <select id="rPreset"></select>
+        <button class="btn sm" id="rClear">كل الفترات</button>
+        <span class="hint" id="rangeHint"></span>
+      </div>
+      <div class="grid" id="filterGrid"></div>
+      <div class="chips" id="chips"></div>
+    </section>
+
+    <section class="kpis" id="kpis"></section>
+
+    <div class="row r-21">
+      <div class="card panel">
+        <h3>عدد الشكاوى حسب تصنيف الشكوى</h3>
+        <div class="ph">مقسمة حسب حالة الشكوى — اضغط على العمود للفلترة</div>
+        <div class="ch"><canvas id="cCategory"></canvas></div>
+      </div>
+      <div class="card panel">
+        <h3>عدد الشكاوى حسب الشهر</h3>
+        <div class="ph">حسب تاريخ استلام الشكوى</div>
+        <div class="ch"><canvas id="cMonth"></canvas></div>
+      </div>
+    </div>
+
+    <div class="row r-21">
+      <div class="card panel">
+        <h3>عدد الشكاوى حسب اسم العميل</h3>
+        <div class="ph">اضغط على العميل لعرض تصنيفات شكاواه في باقي الرسوم</div>
+        <div class="scroll-x"><div class="ch" id="custBox"><canvas id="cCustomer"></canvas></div></div>
+      </div>
+      <div class="card panel">
+        <h3>حالة الشكوى</h3>
+        <div class="ph">منتهية / تحت الإجراء</div>
+        <div class="ch"><canvas id="cStatus"></canvas></div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="card panel">
+        <h3>
+          <span id="mxTitle">مصفوفة: اسم العميل × تصنيف الشكوى</span>
+          <button class="btn sm" id="mxSwap">⇄ تبديل المحاور</button>
+        </h3>
+        <div class="ph">كل خلية = عدد الشكاوى. اضغط على خلية لفلترة العميل والتصنيف معاً.</div>
+        <div class="mx-wrap" id="matrix"></div>
+      </div>
+    </div>
+
+    <div class="row r-3">
+      <div class="card panel"><h3>حسب الفرع</h3><div class="ph">SPM / SPC</div><div class="ch sm" id="bBranch"><canvas id="cBranch"></canvas></div></div>
+      <div class="card panel"><h3>حسب الإدارة المعنية</h3><div class="ph">&nbsp;</div><div class="ch sm" id="bDept"><canvas id="cDept"></canvas></div></div>
+      <div class="card panel"><h3>الشكوى ضد</h3><div class="ph">&nbsp;</div><div class="ch sm" id="bAgainst"><canvas id="cAgainst"></canvas></div></div>
+    </div>
+    <div class="row r-3">
+      <div class="card panel"><h3>وسيلة التواصل</h3><div class="ph">&nbsp;</div><div class="ch sm" id="bChannel"><canvas id="cChannel"></canvas></div></div>
+      <div class="card panel"><h3>صحة الشكوى</h3><div class="ph">&nbsp;</div><div class="ch sm" id="bValidity"><canvas id="cValidity"></canvas></div></div>
+      <div class="card panel"><h3>الدولة / المدينة</h3><div class="ph">&nbsp;</div><div class="ch sm" id="bCity"><canvas id="cCity"></canvas></div></div>
+    </div>
+    <div class="row r-2">
+      <div class="card panel"><h3>حسب الموظف المستلم</h3><div class="ph">&nbsp;</div><div class="ch sm" id="bEmployee"><canvas id="cEmployee"></canvas></div></div>
+      <div class="card panel">
+        <h3>أقدم الشكاوى المفتوحة (تحت الإجراء)</h3>
+        <div class="ph">عدد الأيام منذ استلام الشكوى حتى اليوم</div>
+        <div class="tbl-wrap" style="max-height:268px" id="openList"></div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="card panel">
+        <h3>سجل الشكاوى التفصيلي <span class="hint" id="tblCount"></span></h3>
+        <div class="tbl-tools">
+          <input type="search" id="search" placeholder="بحث في رقم الشكوى، العميل، الشرح، الإجراءات...">
+          <button class="btn" id="exportBtn">تصدير Excel</button>
+        </div>
+        <div class="tbl-wrap"><table class="dt" id="table"></table></div>
+        <div class="pager" id="pager"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="modal"><div class="box" id="modalBox"></div></div>
+
+<script>
+'use strict';
+/* ========================= Config ========================= */
+const BLANK = '(غير محدد)';
+const NODATE = '(بدون تاريخ)';
+const MONTHS = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+const AUTO_REFRESH_MS = 30000;
+
+// أعمدة ملف الإكسل (يتم التعرف عليها بالاسم وليس بالترتيب)
+const COLS = [
+  {key:'id',        label:'رقم الشكوى',                    aliases:['رقم الشكوى','رقم الشكوي','Complaint No']},
+  {key:'employee',  label:'اسم الموظف المستلم',            aliases:['اسم الموظف المستلم','الموظف المستلم']},
+  {key:'against',   label:'الشكوى ضد',                     aliases:['الشكوى ضد']},
+  {key:'channel',   label:'وسيلة التواصل',                 aliases:['وسيلة التواصل','طريقة التواصل']},
+  {key:'date',      label:'تاريخ استلام الشكوى',           aliases:['تاريخ استلام الشكوى','تاريخ الشكوى']},
+  {key:'docsDate',  label:'تاريخ استلام المستندات والعينات',aliases:['تاريخ استلام المستندات والعينات','تاريخ استلام المستندات']},
+  {key:'id2',       label:'رقم الشكوى (2)',                aliases:[]},
+  {key:'customer',  label:'اسم العميل',                    aliases:['اسم العميل','العميل']},
+  {key:'phone',     label:'رقم تواصل العميل',              aliases:['رقم تواصل العميل','رقم العميل','جوال العميل']},
+  {key:'desc',      label:'شرح الشكوى',                    aliases:['شرح الشكوى','وصف الشكوى']},
+  {key:'category',  label:'تصنيف الشكوى',                  aliases:['تصنيف الشكوى','نوع الشكوى']},
+  {key:'city',      label:'الدولة / المدينة',              aliases:['الدولة / المدينة','الدولة/المدينة','المدينة','الدولة']},
+  {key:'csAction',  label:'اجراءات خدمة العملاء',          aliases:['اجراءات خدمة العملاء','إجراءات خدمة العملاء']},
+  {key:'deptAction',label:'الاجراء المتخذ للادارة المعنية',aliases:['الاجراء المتخذ للادارة المعنية','الإجراء المتخذ للإدارة المعنية','الاجراء المتخذ']},
+  {key:'dept',      label:'الإدارة المعنية',               aliases:['الإدارة المعنية','الادارة المعنية']},
+  {key:'comp',      label:'التعويضات',                     aliases:['التعويضات','التعويض']},
+  {key:'status',    label:'حالة الشكوى',                   aliases:['حالة الشكوى','الحالة']},
+  {key:'closeDate', label:'تاريخ الاقفال وابلاغ العميل',   aliases:['تاريخ الاقفال وابلاغ العميل','تاريخ الإقفال وإبلاغ العميل','تاريخ الاقفال','تاريخ الإغلاق']},
+  {key:'validity',  label:'صحة الشكوى',                    aliases:['صحة الشكوى']},
+];
+const DATE_KEYS = ['date','docsDate','closeDate'];
+
+// أبعاد الفلترة
+const DIMS = [
+  {key:'branch',   label:'الفرع'},
+  {key:'year',     label:'السنة'},
+  {key:'ym',       label:'الشهر'},
+  {key:'status',   label:'حالة الشكوى'},
+  {key:'category', label:'تصنيف الشكوى'},
+  {key:'customer', label:'اسم العميل'},
+  {key:'dept',     label:'الإدارة المعنية'},
+  {key:'against',  label:'الشكوى ضد'},
+  {key:'channel',  label:'وسيلة التواصل'},
+  {key:'validity', label:'صحة الشكوى'},
+  {key:'city',     label:'الدولة / المدينة'},
+  {key:'employee', label:'الموظف المستلم'},
+];
+const DIM_LABEL = Object.fromEntries(DIMS.map(d => [d.key, d.label]));
+
+const state = {
+  data: [], sheets: [], filters: {}, search: '', sort: {key:'date', dir:-1}, page: 1, pageSize: 25,
+  meta: null, serverMode: false, mxSwap: false,
+};
+const charts = {};
+
+/* ========================= Helpers ========================= */
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmtN = n => (n ?? 0).toLocaleString('en-US');
+const pad = n => String(n).padStart(2, '0');
+const cssVar = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+
+function norm(s){
+  return String(s ?? '')
+    .replace(/[\u064B-\u0652\u0640]/g, '')
+    .replace(/[أإآ]/g, 'ا').replace(/ة/g, 'ه').replace(/ى/g, 'ي')
+    .replace(/\s*\/\s*/g, '/').replace(/\s+/g, ' ').trim().toLowerCase();
+}
+function str(v){
+  if (v == null) return '';
+  if (typeof v === 'number') return Number.isInteger(v) ? String(v) : String(+v.toFixed(4));
+  return String(v).replace(/\s+/g, ' ').trim();
+}
+function txt(v){ return v == null ? '' : String(v).trim(); }
+function fixDigits(s){
+  return s.replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/[۰-۹]/g, d => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d));
+}
+function mkDate(y, m, d){
+  if (y < 100) y += 2000;
+  if (y < 1990 || y > 2100 || m < 1 || m > 12 || d < 1 || d > 31) return null;
+  const dt = new Date(y, m - 1, d);
+  return isNaN(dt) ? null : dt;
+}
+function toDate(v){
+  if (v == null || v === '') return null;
+  if (v instanceof Date) return isNaN(v) ? null : mkDate(v.getFullYear(), v.getMonth() + 1, v.getDate());
+  if (typeof v === 'number'){
+    if (v > 20000 && v < 80000){ const p = XLSX.SSF.parse_date_code(v); return p ? mkDate(p.y, p.m, p.d) : null; }
+    return null;
+  }
+  const s = fixDigits(String(v)).trim();
+  let m = s.match(/^(\d{4})[\/\-.](\d{1,2})[\/\-.](\d{1,2})/);
+  if (m) return mkDate(+m[1], +m[2], +m[3]);
+  m = s.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})/);
+  if (m){ const a = +m[1], b = +m[2], y = +m[3]; return (b > 12 && a <= 12) ? mkDate(y, a, b) : mkDate(y, b, a); }
+  if (/^\d{5}(\.\d+)?$/.test(s)) return toDate(parseFloat(s));
+  const t = Date.parse(s);
+  if (!isNaN(t)){ const d = new Date(t); return mkDate(d.getFullYear(), d.getMonth() + 1, d.getDate()); }
+  return null;
+}
+const fmtDate = d => d ? `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}` : '';
+function ymLabel(ym, withYear){
+  if (!ym || ym === NODATE) return NODATE;
+  const [y, m] = ym.split('-');
+  return withYear ? `${MONTHS[+m - 1]} ${y}` : MONTHS[+m - 1];
+}
+
+function statusKind(s){
+  const n = norm(s);
+  if (!n) return 'unknown';
+  if (/منته|مغلق|مقفل|انتهت|تم الحل|محلول|تم الاقفال|closed|done|resolved/.test(n)) return 'closed';
+  if (/تحت|جاري|جار |مفتوح|قيد|انتظار|open|pending|progress/.test(n)) return 'open';
+  return 'other';
+}
+function validityKind(s){
+  const n = norm(s);
+  if (!n) return 'unknown';
+  if (/غير|خاطي|خطا|ليست|^لا$|^no$|invalid|false/.test(n)) return 'invalid';
+  if (/صحيح|صح|نعم|^yes$|valid|true|مقبول/.test(n)) return 'valid';
+  return 'unknown';
+}
+function hasComp(s){
+  const n = norm(s);
+  return !!n && !['لا','لا يوجد','لايوجد','لا توجد','لاتوجد','-','--','0','none','no','n/a','na','بدون','لا شيء'].includes(n);
+}
+
+/* ========================= Parsing ========================= */
+function headerScore(row){
+  const all = new Set(COLS.flatMap(c => c.aliases.map(norm)));
+  return row.reduce((s, h) => s + (all.has(norm(h)) ? 1 : 0), 0);
+}
+function findHeaderRow(rows){
+  let best = -1, bestScore = 2;
+  for (let i = 0; i < Math.min(rows.length, 20); i++){
+    const sc = headerScore(rows[i] || []);
+    if (sc > bestScore){ best = i; bestScore = sc; }
+  }
+  return best;
+}
+function mapHeaders(hdr){
+  const map = {}, used = new Set();
+  const nh = hdr.map(norm);
+  // 1) exact match
+  COLS.forEach(c => {
+    const al = c.aliases.map(norm);
+    const idx = nh.findIndex((h, i) => !used.has(i) && h && al.includes(h));
+    if (idx >= 0){ map[c.key] = idx; used.add(idx); }
+  });
+  // second "رقم الشكوى" column
+  const idN = norm('رقم الشكوى');
+  const idx2 = nh.findIndex((h, i) => !used.has(i) && h === idN);
+  if (idx2 >= 0){ map.id2 = idx2; used.add(idx2); }
+  // 2) partial match
+  COLS.forEach(c => {
+    if (map[c.key] != null) return;
+    const al = c.aliases.map(norm).filter(a => a.length >= 4);
+    const idx = nh.findIndex((h, i) => !used.has(i) && h && al.some(a => h.includes(a)));
+    if (idx >= 0){ map[c.key] = idx; used.add(idx); }
+  });
+  return map;
+}
+function parseWorkbook(wb){
+  const records = [], sheets = [], warnings = [], skipped = [];
+  wb.SheetNames.forEach(name => {
+    const ws = wb.Sheets[name];
+    const rows = XLSX.utils.sheet_to_json(ws, {header:1, raw:true, defval:'', blankrows:false});
+    const hr = findHeaderRow(rows);
+    if (hr < 0){ skipped.push(name.trim()); return; }
+    const map = mapHeaders(rows[hr]);
+    const missing = ['customer','category','status','date'].filter(k => map[k] == null).map(k => COLS.find(c => c.key === k).label);
+    if (missing.length) warnings.push(`الشيت "${name}": لم يتم العثور على الأعمدة: ${missing.join('، ')}`);
+    const branch = name.trim();
+    sheets.push(branch);
+    for (let i = hr + 1; i < rows.length; i++){
+      const r = rows[i] || [];
+      const rec = {branch, _sheet: name, _row: i + 1};
+      COLS.forEach(c => { rec[c.key] = map[c.key] != null ? r[map[c.key]] : ''; });
+      if (![rec.id, rec.customer, rec.category, rec.desc, rec.status].some(v => str(v))) continue;
+      DATE_KEYS.forEach(k => { rec[k + 'Obj'] = toDate(rec[k]); });
+      COLS.forEach(c => { if (!DATE_KEYS.includes(c.key)) rec[c.key] = c.key === 'desc' || c.key.endsWith('Action') ? txt(rec[c.key]) : str(rec[c.key]); });
+      const d = rec.dateObj;
+      rec.kind = statusKind(rec.status);
+      rec.vkind = validityKind(rec.validity);
+      rec.hasComp = hasComp(rec.comp);
+      rec.days = (d && rec.closeDateObj) ? Math.round((rec.closeDateObj - d) / 864e5) : null;
+      if (rec.days != null && rec.days < 0) rec.days = null;
+      rec.dim = {
+        branch,
+        year: d ? String(d.getFullYear()) : NODATE,
+        ym: d ? `${d.getFullYear()}-${pad(d.getMonth() + 1)}` : NODATE,
+        status: rec.status || BLANK,
+        category: rec.category || BLANK,
+        customer: rec.customer || BLANK,
+        dept: rec.dept || BLANK,
+        against: rec.against || BLANK,
+        channel: rec.channel || BLANK,
+        validity: rec.validity || BLANK,
+        city: rec.city || BLANK,
+        employee: rec.employee || BLANK,
+      };
+      records.push(rec);
+    }
+  });
+  return {records, sheets, warnings, skipped};
+}
+
+/* ========================= Loading ========================= */
+function showMsg(text, type){
+  const el = $('#msg');
+  el.className = type || ''; el.innerHTML = text || '';
+}
+function ingest(buf, info){
+  let wb;
+  try { wb = XLSX.read(buf, {type:'array', cellDates:false}); }
+  catch(e){ showMsg('تعذر قراءة ملف الإكسل: ' + esc(e.message), 'error'); return; }
+  const {records, sheets, warnings, skipped} = parseWorkbook(wb);
+  state.all = records; state.sheets = sheets; state.skipped = skipped; state.warnings = warnings;
+  state.meta = info; state.page = 1;
+  applySheets();
+}
+
+/* --- اختيار الشيتات المعروضة (يُحفظ في المتصفح) --- */
+function getExcluded(){
+  try { return new Set(JSON.parse(localStorage.getItem('cs-excluded-sheets') || '[]')); } catch(_){ return new Set(); }
+}
+function setExcluded(set){
+  try { localStorage.setItem('cs-excluded-sheets', JSON.stringify([...set])); } catch(_){}
+}
+function activeSheets(){
+  const ex = getExcluded();
+  return state.sheets.filter(s => !ex.has(s));
+}
+function applySheets(){
+  const all = state.all || [];
+  const act = new Set(activeSheets());
+  state.data = all.filter(r => act.has(r.branch));
+  if (state.filters.branch && !act.has(state.filters.branch)) delete state.filters.branch;
+  const warnings = (state.warnings || []).filter(w => [...act].some(s => w.includes(`"${s}"`)));
+  if (!all.length){
+    showMsg('لم يتم العثور على بيانات شكاوى في الملف. تأكد أن أحد الصفوف الأولى يحتوي على عناوين الأعمدة مثل "رقم الشكوى" و"اسم العميل".', 'error');
+  } else if (!state.data.length){
+    showMsg('لم يتم اختيار أي شيت — فعّل شيت واحد على الأقل من "الشيتات المعروضة".', 'error');
+  } else {
+    showMsg(warnings.map(esc).join('<br>'), warnings.length ? 'info' : '');
+  }
+  $('#welcome').style.display = all.length ? 'none' : '';
+  $('#dash').style.display = state.data.length ? 'block' : 'none';
+  $('#reportBtn').disabled = !state.data.length;
+  renderMeta();
+  renderSheetPicker();
+  renderAll();
+}
+function renderSheetPicker(){
+  const box = $('#sheetPicker');
+  if (!state.all){ box.innerHTML = ''; return; }
+  const ex = getExcluded();
+  const count = s => state.all.filter(r => r.branch === s).length;
+  box.innerHTML = `<span class="lbl">الشيتات المعروضة:</span>`
+    + state.sheets.map(s => `<label class="sheet ${ex.has(s) ? 'off' : ''}"><input type="checkbox" data-sheet="${esc(s)}" ${ex.has(s) ? '' : 'checked'}> ${esc(s)} <small>(${fmtN(count(s))})</small></label>`).join('')
+    + (state.skipped || []).map(s => `<label class="sheet off" title="لا يحتوي على عناوين أعمدة الشكاوى"><input type="checkbox" disabled> ${esc(s)} <small>(لا يحتوي بيانات شكاوى)</small></label>`).join('');
+}
+function renderMeta(){
+  const m = state.meta;
+  if (!m){ $('#meta').innerHTML = ''; return; }
+  const counts = activeSheets().map(s => `${esc(s)}: ${fmtN(state.data.filter(r => r.branch === s).length)}`).join(' | ');
+  $('#meta').innerHTML = `
+    <span>الملف: <b>${esc(m.name || '')}</b></span>
+    ${m.mtime ? `<span>آخر تعديل للملف: <b>${new Date(m.mtime * 1000).toLocaleString('en-GB')}</b></span>` : ''}
+    <span>إجمالي السجلات: <b>${fmtN(state.data.length)}</b> (${counts})</span>
+    <span>آخر تحميل: <b>${new Date().toLocaleTimeString('en-GB')}</b></span>`;
+}
+async function api(url, opts){
+  const res = await fetch(url, Object.assign({cache:'no-store'}, opts));
+  if (!res.ok){
+    let msg = res.statusText;
+    try { msg = (await res.json()).error || msg; } catch(_){}
+    throw new Error(msg);
+  }
+  return res;
+}
+async function loadFromServer(){
+  try {
+    const meta = await (await api('/api/meta')).json();
+    const buf = await (await api('/api/file')).arrayBuffer();
+    ingest(buf, meta);
+  } catch(e){ showMsg(esc(e.message), 'error'); }
+}
+async function connect(){
+  const path = $('#path').value.trim();
+  if (!state.serverMode){
+    showMsg('الربط بالمسار يحتاج تشغيل الخادم المحلي: شغّل ملف <b>start-dashboard.bat</b> ثم افتح <b>http://localhost:8765</b>. أو استخدم زر "فتح ملف يدوياً".', 'error');
+    return;
+  }
+  if (!path){ showMsg('الرجاء إدخال مسار ملف الإكسل', 'error'); return; }
+  try {
+    await api('/api/config', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({path})});
+    await loadFromServer();
+  } catch(e){ showMsg(esc(e.message), 'error'); }
+}
+/* --- وضع بدون سيرفر (GitHub Pages): المتصفح يتذكر الملف المختار --- */
+const idb = {
+  open(){
+    return new Promise((res, rej) => {
+      const r = indexedDB.open('cs-dashboard', 1);
+      r.onupgradeneeded = () => r.result.createObjectStore('kv');
+      r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error);
+    });
+  },
+  async get(k){
+    const db = await this.open();
+    return new Promise((res, rej) => { const q = db.transaction('kv').objectStore('kv').get(k); q.onsuccess = () => res(q.result); q.onerror = () => rej(q.error); });
+  },
+  async set(k, v){
+    const db = await this.open();
+    return new Promise((res, rej) => { const t = db.transaction('kv', 'readwrite'); t.objectStore('kv').put(v, k); t.oncomplete = () => res(); t.onerror = () => rej(t.error); });
+  },
+};
+async function loadFromHandle(h, ask){
+  try {
+    let p = await h.queryPermission({mode: 'read'});
+    if (p !== 'granted' && ask) p = await h.requestPermission({mode: 'read'});
+    if (p !== 'granted') return false;
+    const f = await h.getFile();
+    state.handle = h;
+    $('#reopenBox').style.display = 'none';
+    ingest(await f.arrayBuffer(), {name: f.name, mtime: f.lastModified / 1000, local: true});
+    return true;
+  } catch(e){
+    showMsg('تعذر قراءة الملف: ' + esc(e.message) + ' — اختر الملف مرة أخرى.', 'error');
+    return false;
+  }
+}
+async function pickFile(){
+  if (!window.showOpenFilePicker){ $('#fileInput').click(); return; }
+  try {
+    const [h] = await window.showOpenFilePicker({
+      types: [{description: 'Excel', accept: {'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx', '.xlsm', '.xls', '.xlsb'], 'text/csv': ['.csv']}}],
+      excludeAcceptAllOption: false, multiple: false,
+    });
+    try { await idb.set('file', h); } catch(_){}
+    await loadFromHandle(h, true);
+  } catch(e){ if (e.name !== 'AbortError') showMsg(esc(e.message), 'error'); }
+}
+async function autoRefreshTick(){
+  if (!$('#autoRef').checked || !state.meta) return;
+  try {
+    if (state.serverMode && !state.meta.local){
+      const meta = await (await api('/api/meta')).json();
+      if (meta.mtime !== state.meta.mtime) await loadFromServer();
+    } else if (state.handle){
+      const f = await state.handle.getFile();
+      if (f.lastModified / 1000 !== state.meta.mtime) await loadFromHandle(state.handle, false);
+    }
+  } catch(_){}
+}
+async function init(){
+  try { const t = localStorage.getItem('cs-theme'); if (t) document.documentElement.dataset.theme = t; } catch(_){}
+  try {
+    if (location.protocol === 'file:' || location.hostname.endsWith('github.io')) throw new Error('static');
+    const cfg = await (await api('/api/config')).json();
+    state.serverMode = true;
+    if (cfg.path){ $('#path').value = cfg.path; await loadFromServer(); }
+  } catch(_){
+    state.serverMode = false;
+    document.body.classList.add('web');
+    let h = null;
+    try { h = await idb.get('file'); } catch(_){}
+    if (h && !(await loadFromHandle(h, false))){
+      $('#reopenBtn').textContent = `📄 فتح آخر ملف: ${h.name}`;
+      $('#reopenBtn').onclick = () => loadFromHandle(h, true);
+      $('#reopenBox').style.display = '';
+    }
+  }
+  setInterval(autoRefreshTick, AUTO_REFRESH_MS);
+}
+
+/* ========================= Filtering ========================= */
+/* --- فلتر الفترة (من تاريخ - إلى تاريخ) حسب تاريخ استلام الشكوى --- */
+state.range = {from: '', to: ''};
+const isoDate = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+const parseIso = s => { if (!s) return null; const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
+const rangeActive = () => !!(state.range.from || state.range.to);
+function inRange(r){
+  const f = parseIso(state.range.from), t = parseIso(state.range.to);
+  if (!f && !t) return true;
+  const d = r.dateObj;
+  if (!d) return false;
+  return (!f || d >= f) && (!t || d <= t);
+}
+function rangeLabel(rg){
+  rg = rg || state.range;
+  const f = parseIso(rg.from), t = parseIso(rg.to);
+  if (f && t) return `من ${fmtDate(f)} إلى ${fmtDate(t)}`;
+  if (f) return `من ${fmtDate(f)}`;
+  if (t) return `حتى ${fmtDate(t)}`;
+  return 'كل الفترات';
+}
+const PRESETS = [
+  ['thisMonth', 'هذا الشهر'], ['lastMonth', 'الشهر الماضي'], ['last30', 'آخر 30 يوم'], ['last90', 'آخر 90 يوم'],
+  ['thisQ', 'هذا الربع'], ['lastQ', 'الربع الماضي'], ['h1', 'النصف الأول من هذه السنة'], ['h2', 'النصف الثاني من هذه السنة'],
+  ['thisYear', 'هذه السنة'], ['lastYear', 'السنة الماضية'],
+];
+function presetRange(key){
+  const t = new Date(); t.setHours(0, 0, 0, 0);
+  const y = t.getFullYear(), m = t.getMonth(), q = Math.floor(m / 3) * 3;
+  const r = {
+    thisMonth: [new Date(y, m, 1), new Date(y, m + 1, 0)],
+    lastMonth: [new Date(y, m - 1, 1), new Date(y, m, 0)],
+    last30: [new Date(y, m, t.getDate() - 29), t],
+    last90: [new Date(y, m, t.getDate() - 89), t],
+    thisQ: [new Date(y, q, 1), new Date(y, q + 3, 0)],
+    lastQ: [new Date(y, q - 3, 1), new Date(y, q, 0)],
+    h1: [new Date(y, 0, 1), new Date(y, 5, 30)],
+    h2: [new Date(y, 6, 1), new Date(y, 11, 31)],
+    thisYear: [new Date(y, 0, 1), new Date(y, 11, 31)],
+    lastYear: [new Date(y - 1, 0, 1), new Date(y - 1, 11, 31)],
+  }[key];
+  return r ? {from: isoDate(r[0]), to: isoDate(r[1])} : {from: '', to: ''};
+}
+function normRange(from, to){
+  if (from && to && from > to) [from, to] = [to, from];
+  return {from: from || '', to: to || ''};
+}
+const presetOptions = () => `<option value="">فترات جاهزة…</option>${PRESETS.map(([k, l]) => `<option value="${k}">${l}</option>`).join('')}`;
+
+function filtered(exclude){
+  const ex = new Set([].concat(exclude || []));
+  const f = Object.entries(state.filters).filter(([k, v]) => v != null && v !== '' && !ex.has(k));
+  const rng = rangeActive();
+  if (!f.length && !rng) return state.data;
+  return state.data.filter(r => (!rng || inRange(r)) && f.every(([k, v]) => r.dim[k] === v));
+}
+function setFilter(key, val){
+  if (val == null || val === '' || state.filters[key] === val) delete state.filters[key];
+  else state.filters[key] = val;
+  state.page = 1;
+  renderAll();
+}
+
+/* ========================= Colors ========================= */
+const OTHER_COLORS = ['#E66C37','#6B007B','#E044A7','#744EC2','#D9B300','#D64550','#197278','#1AAB40'];
+function statusList(rows){
+  const m = new Map();
+  rows.forEach(r => m.set(r.dim.status, r.kind));
+  const order = {closed:0, open:1, other:2, unknown:3};
+  return [...m.entries()].sort((a, b) => order[a[1]] - order[b[1]] || a[0].localeCompare(b[0], 'ar')).map(([s, k]) => ({s, k}));
+}
+function statusColor(s, k, i){
+  if (k === 'closed') return cssVar('--closed');
+  if (k === 'open') return cssVar('--open');
+  if (k === 'unknown') return '#A0A7B4';
+  return OTHER_COLORS[i % OTHER_COLORS.length];
+}
+function fade(hex, a){
+  const h = hex.replace('#', '');
+  const n = parseInt(h.length === 3 ? h.split('').map(c => c + c).join('') : h, 16);
+  return `rgba(${n >> 16 & 255},${n >> 8 & 255},${n & 255},${a})`;
+}
+
+/* ========================= Charts ========================= */
+const totalsPlugin = {
+  id: 'totals',
+  afterDatasetsDraw(chart, _a, opts){
+    if (!opts || !opts.enabled) return;
+    const horiz = chart.options.indexAxis === 'y';
+    const vScale = horiz ? chart.scales.x : chart.scales.y;
+    const zero = vScale.getPixelForValue(0);
+    const ctx = chart.ctx;
+    ctx.save();
+    ctx.font = '700 11.5px Tajawal, Segoe UI, sans-serif';
+    ctx.fillStyle = cssVar('--ink-2');
+    chart.data.labels.forEach((_, i) => {
+      let total = 0, far = null, farDist = -1;
+      chart.data.datasets.forEach((ds, di) => {
+        const meta = chart.getDatasetMeta(di);
+        if (meta.hidden || !chart.isDatasetVisible(di)) return;
+        const v = +ds.data[i] || 0;
+        if (!v) return;
+        total += v;
+        const el = meta.data[i];
+        const pos = horiz ? el.x : el.y;
+        const dist = Math.abs(pos - zero);
+        if (dist > farDist){ farDist = dist; far = el; }
+      });
+      if (!total || !far) return;
+      if (horiz){
+        const dir = Math.sign(far.x - zero) || 1;
+        ctx.textAlign = dir > 0 ? 'left' : 'right'; ctx.textBaseline = 'middle';
+        ctx.fillText(fmtN(total), far.x + dir * 5, far.y);
+      } else {
+        ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+        ctx.fillText(fmtN(total), far.x, far.y - 3);
+      }
+    });
+    ctx.restore();
+  }
+};
+Chart.register(totalsPlugin);
+Chart.defaults.font.family = 'Tajawal, "Segoe UI", Tahoma, sans-serif';
+Chart.defaults.font.size = 12;
+Chart.defaults.animation.duration = 350;
+
+const trunc = (s, n) => (s = String(s), s.length > n ? s.slice(0, n - 1) + '…' : s);
+
+/**
+ * رسم أعمدة مكدسة حسب حالة الشكوى لبعد معين، مع فلترة متقاطعة عند الضغط
+ */
+function stackedChart(canvasId, dim, opts = {}){
+  // في وضع التقرير: كل الفلاتر تطبق على كل الرسوم (بدون تظليل)
+  const rows = state.noAnim ? filtered() : filtered(dim);
+  const groups = new Map();
+  rows.forEach(r => {
+    const v = r.dim[dim];
+    let g = groups.get(v);
+    if (!g){ g = {total:0, s:{}}; groups.set(v, g); }
+    g.total++; g.s[r.dim.status] = (g.s[r.dim.status] || 0) + 1;
+  });
+  let keys = [...groups.keys()];
+  if (opts.chrono) keys.sort((a, b) => (a === NODATE) - (b === NODATE) || a.localeCompare(b));
+  else keys.sort((a, b) => groups.get(b).total - groups.get(a).total || String(a).localeCompare(String(b), 'ar'));
+  const multiYear = new Set(rows.map(r => r.dim.year).filter(y => y !== NODATE)).size > 1;
+  const labels = keys.map(k => opts.fmt ? opts.fmt(k, multiYear) : k);
+  const sel = state.noAnim ? null : state.filters[dim];
+  const statuses = statusList(rows);
+  const datasets = statuses.map(({s, k}, i) => {
+    const c = statusColor(s, k, i);
+    return {
+      label: s, stack: 'a', borderRadius: 2, maxBarThickness: opts.horizontal ? 26 : 48,
+      data: keys.map(key => groups.get(key).s[s] || 0),
+      backgroundColor: keys.map(key => (sel != null && key !== sel) ? fade(c, .25) : c),
+    };
+  });
+
+  // dynamic size
+  if (opts.box){
+    const box = document.getElementById(opts.box);
+    if (opts.horizontal) box.style.height = Math.max(200, keys.length * 30 + 70) + 'px';
+    if (opts.minPer) box.style.width = Math.max(box.parentElement.clientWidth, keys.length * opts.minPer) + 'px';
+  }
+  const ink3 = cssVar('--ink-3'), grid = cssVar('--grid'), ink2 = cssVar('--ink-2');
+  const catAxis = {
+    stacked: true, grid: {display:false}, reverse: !opts.horizontal,
+    position: opts.horizontal ? 'right' : 'bottom',
+    ticks: {color: ink2, autoSkip: false, maxRotation: opts.horizontal ? 0 : 60, minRotation: 0,
+      callback(v){ return trunc(this.getLabelForValue(v), opts.horizontal ? 22 : 18); }},
+  };
+  const valAxis = {
+    stacked: true, beginAtZero: true, grace: '8%', reverse: !!opts.horizontal,
+    position: opts.horizontal ? 'bottom' : 'right',
+    grid: {color: grid}, border: {display:false},
+    ticks: {color: ink3, precision: 0},
+  };
+  const config = {
+    type: 'bar',
+    data: {labels, datasets},
+    options: {
+      indexAxis: opts.horizontal ? 'y' : 'x',
+      responsive: true, maintainAspectRatio: false,
+      animation: state.noAnim ? false : {duration: 350},
+      devicePixelRatio: state.noAnim ? 2 : undefined,
+      layout: {padding: opts.horizontal ? {left: 34, right: 4, top: 4} : {top: 20}},
+      scales: opts.horizontal ? {y: catAxis, x: valAxis} : {x: catAxis, y: valAxis},
+      plugins: {
+        totals: {enabled: true},
+        legend: {display: opts.legend !== false && datasets.length > 1, position: 'top', align: 'start', rtl: true,
+          labels: {color: ink2, boxWidth: 12, boxHeight: 12, usePointStyle: false}},
+        tooltip: {rtl: true, textDirection: 'rtl', mode: 'index', intersect: false,
+          filter: it => it.raw > 0,
+          callbacks: {
+            title: items => items.length ? (opts.fmt ? opts.fmt(keys[items[0].dataIndex], true) : keys[items[0].dataIndex]) : '',
+            footer: items => items.length ? 'الإجمالي: ' + fmtN(groups.get(keys[items[0].dataIndex]).total) : '',
+          }},
+      },
+      onClick(evt, _els, chart){
+        const pts = chart.getElementsAtEventForMode(evt, 'index', {intersect: false}, true);
+        if (pts.length) setFilter(dim, keys[pts[0].index]);
+      },
+      onHover(evt, els){ evt.native.target.style.cursor = els.length ? 'pointer' : 'default'; },
+    },
+  };
+  if (charts[canvasId]) charts[canvasId].destroy();
+  charts[canvasId] = new Chart(document.getElementById(canvasId), config);
+}
+
+/* ========================= KPIs ========================= */
+function topOf(rows, key){
+  const m = new Map();
+  rows.forEach(r => { const v = r.dim[key]; if (v !== BLANK) m.set(v, (m.get(v) || 0) + 1); });
+  let best = null, bc = 0;
+  m.forEach((c, v) => { if (c > bc){ best = v; bc = c; } });
+  return best ? {v: best, c: bc} : null;
+}
+function renderKpis(){
+  const rows = filtered();
+  const n = rows.length;
+  const closed = rows.filter(r => r.kind === 'closed').length;
+  const open = n - closed;
+  const days = rows.map(r => r.days).filter(d => d != null);
+  const avg = days.length ? days.reduce((a, b) => a + b, 0) / days.length : null;
+  const vRows = rows.filter(r => r.vkind !== 'unknown');
+  const valid = vRows.filter(r => r.vkind === 'valid').length;
+  const comp = rows.filter(r => r.hasComp).length;
+  const custs = new Set(rows.map(r => r.dim.customer).filter(c => c !== BLANK)).size;
+  const tc = topOf(rows, 'category'), tu = topOf(rows, 'customer');
+  const pct = (a, b) => b ? Math.round(a / b * 100) + '%' : '—';
+  const k = (l, v, s, color, isTxt) => `<div class="card kpi" style="--k:${color}"><div class="l">${l}</div><div class="v${isTxt ? ' txt' : ''}">${v}</div><div class="s">${s || '&nbsp;'}</div></div>`;
+  $('#kpis').innerHTML = [
+    k('إجمالي الشكاوى', fmtN(n), `${fmtN(custs)} عميل`, 'var(--accent)'),
+    k('منتهية', fmtN(closed), `نسبة الإغلاق ${pct(closed, n)}`, 'var(--closed)'),
+    k('تحت الإجراء', fmtN(open), `${pct(open, n)} من الإجمالي`, 'var(--warn)'),
+    k('متوسط مدة الإغلاق', avg == null ? '—' : avg.toFixed(1), avg == null ? 'لا توجد تواريخ إقفال' : `يوم (من ${fmtN(days.length)} شكوى)`, 'var(--ok)'),
+    k('شكاوى صحيحة', vRows.length ? fmtN(valid) : '—', vRows.length ? `${pct(valid, vRows.length)} من المُقيّمة (${fmtN(vRows.length)})` : 'لا يوجد تقييم', 'var(--danger)'),
+    k('شكاوى بها تعويضات', fmtN(comp), pct(comp, n), '#744EC2'),
+    k('أكثر تصنيف تكراراً', tc ? esc(tc.v) : '—', tc ? `${fmtN(tc.c)} شكوى` : '', '#E66C37', true),
+    k('أكثر عميل شكاوى', tu ? esc(tu.v) : '—', tu ? `${fmtN(tu.c)} شكوى` : '', '#197278', true),
+  ].join('');
+}
+
+/* ========================= Filters UI ========================= */
+function renderFilters(){
+  const multiYear = new Set(state.data.map(r => r.dim.year).filter(y => y !== NODATE)).size > 1;
+  $('#filterGrid').innerHTML = DIMS.map(d => {
+    const rows = filtered(d.key);
+    const counts = new Map();
+    rows.forEach(r => counts.set(r.dim[d.key], (counts.get(r.dim[d.key]) || 0) + 1));
+    const cur = state.filters[d.key];
+    if (cur != null && !counts.has(cur)) counts.set(cur, 0);
+    let vals = [...counts.keys()];
+    if (d.key === 'ym' || d.key === 'year') vals.sort((a, b) => (a === NODATE) - (b === NODATE) || b.localeCompare(a));
+    else vals.sort((a, b) => (a === BLANK) - (b === BLANK) || String(a).localeCompare(String(b), 'ar'));
+    const lab = v => d.key === 'ym' ? ymLabel(v, multiYear || true) : v;
+    return `<div class="f"><label>${d.label}</label>
+      <select data-dim="${d.key}" class="${cur != null ? 'active' : ''}">
+        <option value="">الكل</option>
+        ${vals.map(v => `<option value="${esc(v)}" ${v === cur ? 'selected' : ''}>${esc(lab(v))} (${counts.get(v)})</option>`).join('')}
+      </select></div>`;
+  }).join('');
+  // الفترة
+  const ds = state.data.map(r => r.dateObj).filter(Boolean);
+  if (ds.length){
+    const mn = isoDate(new Date(Math.min(...ds))), mx = isoDate(new Date(Math.max(...ds)));
+    $('#rFrom').placeholder = mn; $('#rTo').placeholder = mx;
+    $('#rangeHint').textContent = `البيانات المتوفرة: من ${fmtDate(parseIso(mn))} إلى ${fmtDate(parseIso(mx))}`;
+  }
+  $('#rFrom').value = state.range.from; $('#rTo').value = state.range.to;
+  $('#rangeBar').classList.toggle('on', rangeActive());
+  $('#rPreset').value = '';
+  const active = Object.entries(state.filters);
+  const rangeChip = rangeActive() ? `<span class="chip">📅 الفترة: <b>${rangeLabel()}</b><button data-clear="range" title="إزالة">×</button></span>` : '';
+  $('#chips').innerHTML = (active.length || rangeActive())
+    ? rangeChip + active.map(([k, v]) => `<span class="chip">${DIM_LABEL[k]}: <b>${esc(k === 'ym' ? ymLabel(v, true) : v)}</b><button data-clear="${k}" title="إزالة">×</button></span>`).join('')
+      + `<button class="btn sm" data-clear="*">مسح كل الفلاتر</button>`
+    : `<span class="hint">💡 اضغط على أي عمود في الرسوم البيانية للفلترة عليه (مثل Power BI)، واضغط عليه مرة أخرى لإلغاء الفلتر.</span>`;
+}
+
+/* ========================= Matrix ========================= */
+function renderMatrix(){
+  const rk = state.mxSwap ? 'category' : 'customer';
+  const ck = state.mxSwap ? 'customer' : 'category';
+  $('#mxTitle').textContent = `مصفوفة: ${DIM_LABEL[rk]} × ${DIM_LABEL[ck]}`;
+  const rows = filtered(['customer', 'category']);
+  const cell = new Map(), rt = new Map(), ct = new Map();
+  rows.forEach(r => {
+    const a = r.dim[rk], b = r.dim[ck], key = a + '\u0001' + b;
+    cell.set(key, (cell.get(key) || 0) + 1);
+    rt.set(a, (rt.get(a) || 0) + 1); ct.set(b, (ct.get(b) || 0) + 1);
+  });
+  if (!rows.length){ $('#matrix').innerHTML = '<div class="empty">لا توجد بيانات</div>'; return; }
+  const R = [...rt.keys()].sort((a, b) => rt.get(b) - rt.get(a) || a.localeCompare(b, 'ar'));
+  const C = [...ct.keys()].sort((a, b) => ct.get(b) - ct.get(a) || a.localeCompare(b, 'ar'));
+  let max = 0; cell.forEach(v => { if (v > max) max = v; });
+  const selR = state.filters[rk], selC = state.filters[ck];
+  const acc = cssVar('--accent');
+  const dark = getComputedStyle(document.body).backgroundColor.match(/\d+/g).slice(0, 3).reduce((a, b) => a + +b, 0) < 200;
+  let h = `<table class="mx"><thead><tr><th class="rh">${DIM_LABEL[rk]} \\ ${DIM_LABEL[ck]}</th>`;
+  h += C.map(c => `<th class="${c === selC ? 'sel' : ''}" title="${esc(c)}">${esc(trunc(c, 28))}</th>`).join('');
+  h += `<th class="tot">الإجمالي</th></tr></thead><tbody>`;
+  R.forEach(r => {
+    h += `<tr class="${r === selR ? 'sel' : ''}"><th class="rh" title="${esc(r)}">${esc(r)}</th>`;
+    C.forEach(c => {
+      const v = cell.get(r + '\u0001' + c) || 0;
+      if (!v){ h += `<td class="z">0</td>`; return; }
+      const a = .12 + .78 * (v / max);
+      const color = a > .55 ? '#fff' : (dark ? '#e8edf3' : '#1b2430');
+      const s = (r === selR && c === selC) ? ' selc' : '';
+      h += `<td class="${s.trim()}" style="background:${fade(acc, a.toFixed(2))};color:${color}" data-r="${esc(r)}" data-c="${esc(c)}" title="${esc(r)} — ${esc(c)}: ${v}">${v}</td>`;
+    });
+    h += `<td class="tot">${rt.get(r)}</td></tr>`;
+  });
+  h += `<tr class="tot"><th class="rh tot">الإجمالي</th>${C.map(c => `<td>${ct.get(c)}</td>`).join('')}<td>${rows.length}</td></tr>`;
+  h += `</tbody></table>`;
+  $('#matrix').innerHTML = h;
+  $('#matrix').onclick = e => {
+    const td = e.target.closest('td[data-r]');
+    if (!td) return;
+    const r = td.dataset.r, c = td.dataset.c;
+    if (state.filters[rk] === r && state.filters[ck] === c){ delete state.filters[rk]; delete state.filters[ck]; }
+    else { state.filters[rk] = r; state.filters[ck] = c; }
+    state.page = 1; renderAll();
+  };
+}
+
+/* ========================= Open complaints ========================= */
+function renderOpenList(){
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const rows = filtered().filter(r => r.kind !== 'closed')
+    .map(r => ({r, age: r.dateObj ? Math.round((today - r.dateObj) / 864e5) : null}))
+    .sort((a, b) => (b.age ?? -1) - (a.age ?? -1)).slice(0, 50);
+  if (!rows.length){ $('#openList').innerHTML = '<div class="empty">لا توجد شكاوى مفتوحة 👍</div>'; return; }
+  $('#openList').innerHTML = `<table class="dt"><thead><tr><th>رقم الشكوى</th><th>العميل</th><th>التصنيف</th><th>تاريخ الاستلام</th><th>الأيام</th></tr></thead><tbody>
+    ${rows.map(({r, age}) => `<tr data-i="${state.data.indexOf(r)}"><td>${esc(r.id)}</td><td>${esc(r.customer)}</td><td>${esc(r.category)}</td><td>${fmtDate(r.dateObj)}</td><td class="${age > 30 ? 'age-hi' : ''}">${age ?? '—'}</td></tr>`).join('')}
+  </tbody></table>`;
+}
+
+/* ========================= Detail table ========================= */
+const TCOLS = [
+  {k:'branch',   l:'الفرع'},
+  {k:'id',       l:'رقم الشكوى'},
+  {k:'date',     l:'تاريخ الاستلام', d:'dateObj'},
+  {k:'customer', l:'اسم العميل'},
+  {k:'category', l:'تصنيف الشكوى'},
+  {k:'against',  l:'الشكوى ضد'},
+  {k:'channel',  l:'وسيلة التواصل'},
+  {k:'dept',     l:'الإدارة المعنية'},
+  {k:'employee', l:'الموظف المستلم'},
+  {k:'status',   l:'الحالة'},
+  {k:'closeDate',l:'تاريخ الإقفال', d:'closeDateObj'},
+  {k:'days',     l:'مدة الإغلاق (يوم)'},
+  {k:'validity', l:'صحة الشكوى'},
+  {k:'comp',     l:'التعويضات'},
+];
+function tableRows(){
+  let rows = filtered();
+  const q = norm(state.search);
+  if (q){
+    rows = rows.filter(r => norm([r.branch, r.id, r.id2, r.customer, r.category, r.desc, r.csAction, r.deptAction, r.dept, r.against,
+      r.channel, r.employee, r.phone, r.city, r.status, r.comp, r.validity].join(' ')).includes(q));
+  }
+  const {key, dir} = state.sort;
+  const col = TCOLS.find(c => c.k === key);
+  const val = r => col && col.d ? (r[col.d] ? r[col.d].getTime() : null) : r[key];
+  return rows.slice().sort((a, b) => {
+    const x = val(a), y = val(b);
+    const ex = x == null || x === '', ey = y == null || y === '';
+    if (ex || ey) return ex - ey;
+    if (typeof x === 'number' && typeof y === 'number') return (x - y) * dir;
+    const nx = +x, ny = +y;
+    if (!isNaN(nx) && !isNaN(ny)) return (nx - ny) * dir;
+    return String(x).localeCompare(String(y), 'ar') * dir;
+  });
+}
+function renderTable(){
+  const rows = tableRows();
+  const pages = Math.max(1, Math.ceil(rows.length / state.pageSize));
+  if (state.page > pages) state.page = pages;
+  const slice = rows.slice((state.page - 1) * state.pageSize, state.page * state.pageSize);
+  const {key, dir} = state.sort;
+  const cell = (r, c) => {
+    if (c.d) return fmtDate(r[c.d]) || esc(r[c.k]);
+    if (c.k === 'status') return r.status ? `<span class="badge ${r.kind === 'closed' ? 'closed' : r.kind === 'open' ? 'open' : 'other'}">${esc(r.status)}</span>` : '';
+    if (c.k === 'days') return r.days ?? '';
+    return esc(r[c.k]);
+  };
+  $('#table').innerHTML = `<thead><tr>${TCOLS.map(c => `<th data-k="${c.k}">${c.l} ${key === c.k ? `<span class="ar">${dir > 0 ? '▲' : '▼'}</span>` : ''}</th>`).join('')}</tr></thead>
+    <tbody>${slice.map(r => `<tr data-i="${state.data.indexOf(r)}">${TCOLS.map(c => `<td title="${esc(c.d ? fmtDate(r[c.d]) : r[c.k])}">${cell(r, c)}</td>`).join('')}</tr>`).join('')
+      || `<tr><td colspan="${TCOLS.length}" class="empty">لا توجد نتائج</td></tr>`}</tbody>`;
+  $('#tblCount').textContent = `(${fmtN(rows.length)} شكوى)`;
+  $('#pager').innerHTML = `<span>عرض ${rows.length ? fmtN((state.page - 1) * state.pageSize + 1) : 0}–${fmtN(Math.min(state.page * state.pageSize, rows.length))} من ${fmtN(rows.length)}</span>
+    <span style="display:flex;gap:6px;align-items:center">
+      <select id="pageSize" class="btn sm">${[25, 50, 100, 500].map(n => `<option ${n === state.pageSize ? 'selected' : ''}>${n}</option>`).join('')}</select>
+      <button class="btn sm" data-pg="prev" ${state.page <= 1 ? 'disabled' : ''}>السابق</button>
+      <span>صفحة ${state.page} / ${pages}</span>
+      <button class="btn sm" data-pg="next" ${state.page >= pages ? 'disabled' : ''}>التالي</button>
+    </span>`;
+}
+function openDetails(i){
+  const r = state.data[i];
+  if (!r) return;
+  const fields = [['الفرع (الشيت)', r.branch], ...COLS.filter(c => c.key !== 'id2' || r.id2).map(c => [c.label, DATE_KEYS.includes(c.key) ? (fmtDate(r[c.key + 'Obj']) || str(r[c.key])) : r[c.key]])];
+  if (r.days != null) fields.push(['مدة الإغلاق', r.days + ' يوم']);
+  fields.push(['رقم الصف في الإكسل', `${r._sheet} — صف ${r._row}`]);
+  $('#modalBox').innerHTML = `<h3><span>تفاصيل الشكوى ${esc(r.id)}</span><button class="btn sm" data-close>إغلاق ✕</button></h3>
+    <div class="kv">${fields.map(([k, v]) => `<div class="k">${esc(k)}</div><div class="v">${esc(v) || '—'}</div>`).join('')}</div>`;
+  $('#modal').classList.add('show');
+}
+function exportExcel(){
+  const rows = tableRows().map(r => {
+    const o = {'الفرع': r.branch};
+    COLS.forEach(c => { if (c.key === 'id2' && !r.id2) return; o[c.label] = DATE_KEYS.includes(c.key) ? (fmtDate(r[c.key + 'Obj']) || str(r[c.key])) : r[c.key]; });
+    o['مدة الإغلاق (يوم)'] = r.days ?? '';
+    return o;
+  });
+  const ws = XLSX.utils.json_to_sheet(rows);
+  const wb = XLSX.utils.book_new();
+  wb.Workbook = {Views: [{RTL: true}]};
+  XLSX.utils.book_append_sheet(wb, ws, 'الشكاوى');
+  XLSX.writeFile(wb, `شكاوى_العملاء_${new Date().toISOString().slice(0, 10)}.xlsx`);
+}
+
+/* ========================= Render all ========================= */
+function renderAll(){
+  if (!state.data.length) return;
+  renderFilters();
+  renderKpis();
+  stackedChart('cCategory', 'category');
+  stackedChart('cMonth', 'ym', {chrono: true, fmt: ymLabel});
+  stackedChart('cCustomer', 'customer', {box: 'custBox', minPer: 34});
+  stackedChart('cStatus', 'status', {legend: false});
+  stackedChart('cBranch', 'branch', {horizontal: true, box: 'bBranch'});
+  stackedChart('cDept', 'dept', {horizontal: true, box: 'bDept'});
+  stackedChart('cAgainst', 'against', {horizontal: true, box: 'bAgainst'});
+  stackedChart('cChannel', 'channel', {horizontal: true, box: 'bChannel'});
+  stackedChart('cValidity', 'validity', {horizontal: true, box: 'bValidity'});
+  stackedChart('cCity', 'city', {horizontal: true, box: 'bCity'});
+  stackedChart('cEmployee', 'employee', {horizontal: true, box: 'bEmployee'});
+  renderMatrix();
+  renderOpenList();
+  renderTable();
+}
+
+/* ========================= PDF Report ========================= */
+const DAYS = ['الأحد','الإثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
+function fmtTime(d){
+  const h = d.getHours();
+  return `${pad(h % 12 || 12)}:${pad(d.getMinutes())} ${h < 12 ? 'ص' : 'م'}`;
+}
+function groupBy(rows, key, subKey){
+  const m = new Map();
+  rows.forEach(r => {
+    const v = r.dim[key];
+    let g = m.get(v);
+    if (!g){ g = {v, n:0, closed:0, days:[], sub:new Map()}; m.set(v, g); }
+    g.n++;
+    if (r.kind === 'closed') g.closed++;
+    if (r.days != null) g.days.push(r.days);
+    if (subKey){ const s = r.dim[subKey]; g.sub.set(s, (g.sub.get(s) || 0) + 1); }
+  });
+  return [...m.values()];
+}
+const avgOf = a => a.length ? a.reduce((x, y) => x + y, 0) / a.length : null;
+const pctOf = (a, b) => b ? Math.round(a / b * 100) + '%' : '—';
+
+function captureCharts(){
+  const root = document.documentElement, prev = root.dataset.theme;
+  root.dataset.theme = 'light';
+  state.noAnim = true;
+  const imgs = {};
+  try {
+    renderAll();
+    Object.keys(charts).forEach(id => { try { imgs[id] = charts[id].toBase64Image('image/png', 1); } catch(_){} });
+  } finally {
+    state.noAnim = false;
+    if (prev) root.dataset.theme = prev; else delete root.dataset.theme;
+    renderAll();
+  }
+  return imgs;
+}
+
+function reportDialog(){
+  let o = {charts:true, tables:true, open:true, log:false, author:''};
+  try { Object.assign(o, JSON.parse(localStorage.getItem('cs-report-opts') || '{}')); } catch(_){}
+  const fl = Object.entries(state.filters);
+  const chk = (k, l) => `<label><input type="checkbox" data-opt="${k}" ${o[k] ? 'checked' : ''}> ${l}</label>`;
+  $('#modalBox').innerHTML = `<h3><span>📄 إصدار تقرير PDF</span><button class="btn sm" data-close>إغلاق ✕</button></h3>
+    <div class="rep-opts">
+      <b>📅 فترة التقرير (حسب تاريخ استلام الشكوى):</b>
+      <div class="rep-range">
+        <span>من</span><input type="date" id="repFrom" value="${state.range.from}">
+        <span>إلى</span><input type="date" id="repTo" value="${state.range.to}">
+        <select id="repPreset">${presetOptions()}<option value="all">كل الفترات</option></select>
+      </div>
+      <p style="margin-top:0" id="repInfo"></p>
+      <div style="margin-bottom:8px">معد التقرير (اختياري)<input type="text" id="repAuthor" value="${esc(o.author)}" placeholder="الاسم"></div>
+      <b>محتوى التقرير:</b>
+      <label><input type="checkbox" checked disabled> الملخص التنفيذي والمؤشرات الرئيسية</label>
+      ${chk('charts', 'الرسوم البيانية')}
+      ${chk('tables', 'جداول التحليل (التصنيفات، العملاء، الأشهر، الفروع، الإدارات)')}
+      ${chk('open', 'قائمة الشكاوى المفتوحة (تحت الإجراء)')}
+      ${chk('log', 'السجل التفصيلي لجميع الشكاوى')}
+      <div style="margin-top:14px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <button class="btn primary" id="repGo">إنشاء التقرير</button>
+        <span class="hint">في نافذة الطباعة اختر <b>حفظ كملف PDF / Save as PDF</b></span>
+      </div>
+    </div>`;
+  $('#modal').classList.add('show');
+  const dlgRange = () => normRange($('#repFrom').value, $('#repTo').value);
+  const updInfo = () => {
+    const saved = state.range;
+    state.range = dlgRange();
+    const n = filtered().length, lbl = rangeLabel();
+    state.range = saved;
+    $('#repInfo').innerHTML = `الفترة: <b>${lbl}</b> — عدد الشكاوى: <b>${fmtN(n)}</b> من الشيتات: <b>${activeSheets().map(esc).join('، ')}</b>
+      ${fl.length ? `<br>مع الفلاتر: ${fl.map(([k, v]) => `${DIM_LABEL[k]}: <b>${esc(k === 'ym' ? ymLabel(v, true) : v)}</b>`).join(' | ')}` : ''}
+      ${n ? '' : '<br><span style="color:var(--danger)">لا توجد شكاوى في هذه الفترة.</span>'}`;
+    $('#repGo').disabled = !n;
+  };
+  $('#repFrom').onchange = $('#repTo').onchange = updInfo;
+  $('#repPreset').onchange = e => {
+    const v = e.target.value;
+    if (!v) return;
+    const rg = v === 'all' ? {from: '', to: ''} : presetRange(v);
+    $('#repFrom').value = rg.from; $('#repTo').value = rg.to;
+    e.target.value = '';
+    updInfo();
+  };
+  updInfo();
+  $('#repGo').onclick = () => {
+    const opts = {author: $('#repAuthor').value.trim()};
+    document.querySelectorAll('[data-opt]').forEach(c => { opts[c.dataset.opt] = c.checked; });
+    try { localStorage.setItem('cs-report-opts', JSON.stringify(opts)); } catch(_){}
+    // تطبيق الفترة على الداش بورد أيضاً حتى يطابق التقرير ما يظهر في الصفحة
+    state.range = dlgRange();
+    state.page = 1;
+    renderAll();
+    $('#modal').classList.remove('show');
+    generateReport(opts);
+  };
+}
+
+function generateReport(o){
+  const w = window.open('', '_blank');
+  if (!w){ showMsg('المتصفح منع فتح نافذة التقرير — اسمح بالنوافذ المنبثقة (Pop-ups) لهذه الصفحة ثم حاول مرة أخرى.', 'error'); return; }
+  const imgs = o.charts ? captureCharts() : {};
+  const rows = filtered();
+  const now = new Date();
+  const N = rows.length;
+  const closed = rows.filter(r => r.kind === 'closed').length;
+  const open = N - closed;
+  const days = rows.map(r => r.days).filter(d => d != null);
+  const avgDays = avgOf(days);
+  const vRows = rows.filter(r => r.vkind !== 'unknown');
+  const valid = vRows.filter(r => r.vkind === 'valid').length;
+  const comp = rows.filter(r => r.hasComp).length;
+  const custN = new Set(rows.map(r => r.dim.customer).filter(c => c !== BLANK)).size;
+  const dates = rows.map(r => r.dateObj).filter(Boolean).sort((a, b) => a - b);
+  const dataPeriod = dates.length ? `من ${fmtDate(dates[0])} إلى ${fmtDate(dates[dates.length - 1])}` : '—';
+  const period = rangeActive() ? rangeLabel() : dataPeriod;
+  const multiYear = new Set(rows.map(r => r.dim.year).filter(y => y !== NODATE)).size > 1;
+  const sortN = a => a.sort((x, y) => y.n - x.n || String(x.v).localeCompare(String(y.v), 'ar'));
+  const byCat = sortN(groupBy(rows, 'category', 'customer'));
+  const byCust = sortN(groupBy(rows, 'customer', 'category'));
+  const byMonth = groupBy(rows, 'ym').sort((a, b) => (a.v === NODATE) - (b.v === NODATE) || a.v.localeCompare(b.v));
+  const byBranch = sortN(groupBy(rows, 'branch'));
+  const byDept = sortN(groupBy(rows, 'dept'));
+  const byAgainst = sortN(groupBy(rows, 'against'));
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const openRows = rows.filter(r => r.kind !== 'closed')
+    .map(r => ({r, age: r.dateObj ? Math.round((today - r.dateObj) / 864e5) : null}))
+    .sort((a, b) => (b.age ?? -1) - (a.age ?? -1));
+  const fl = Object.entries(state.filters);
+  const stamp = `${fmtDate(now)} — ${fmtTime(now)}`;
+  const fileTitle = `تقرير شكاوى العملاء ${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}${pad(now.getMinutes())}`;
+  const logo = new URL('logo.png', location.href).href;
+
+  // ---- الملخص التنفيذي ----
+  const top3 = (arr, total) => arr.filter(g => g.v !== BLANK).slice(0, 3).map(g => `<b>${esc(g.v)}</b> (${fmtN(g.n)} — ${pctOf(g.n, total)})`).join('، ');
+  const topCatShare = byCat.filter(g => g.v !== BLANK).slice(0, 3).reduce((s, g) => s + g.n, 0);
+  const peak = byMonth.filter(g => g.v !== NODATE).sort((a, b) => b.n - a.n)[0];
+  const bullets = [
+    `إجمالي الشكاوى المسجلة <b>${fmtN(N)}</b> شكوى من <b>${fmtN(custN)}</b> عميل، للفترة ${period}.`,
+    `تم إغلاق <b>${fmtN(closed)}</b> شكوى بنسبة إغلاق <b>${pctOf(closed, N)}</b>، ولا تزال <b>${fmtN(open)}</b> شكوى تحت الإجراء (${pctOf(open, N)}).`,
+    byCat.length ? `أكثر تصنيفات الشكاوى تكراراً: ${top3(byCat, N)} — وتمثل مجتمعة ${pctOf(topCatShare, N)} من إجمالي الشكاوى.` : '',
+    byCust.length ? `أكثر العملاء تقديماً للشكاوى: ${top3(byCust, N)}.` : '',
+    peak ? `أعلى شهر في عدد الشكاوى: <b>${ymLabel(peak.v, true)}</b> بعدد ${fmtN(peak.n)} شكوى.` : '',
+    avgDays != null ? `متوسط مدة إغلاق الشكوى <b>${avgDays.toFixed(1)}</b> يوم، وأطول مدة ${fmtN(Math.max(...days))} يوم.` : '',
+    vRows.length ? `الشكاوى الصحيحة: <b>${fmtN(valid)}</b> من أصل ${fmtN(vRows.length)} شكوى تم تقييمها (${pctOf(valid, vRows.length)}).` : '',
+    `عدد الشكاوى التي ترتب عليها تعويضات: <b>${fmtN(comp)}</b> (${pctOf(comp, N)}).`,
+    byBranch.length > 1 ? `التوزيع حسب الفرع: ${byBranch.map(g => `<b>${esc(g.v)}</b> ${fmtN(g.n)} (${pctOf(g.n, N)})`).join('، ')}.` : '',
+    openRows.length && openRows[0].age != null ? `أقدم شكوى مفتوحة: رقم <b>${esc(openRows[0].r.id || '—')}</b> للعميل ${esc(openRows[0].r.customer)} منذ <b>${fmtN(openRows[0].age)}</b> يوم.` : '',
+  ].filter(Boolean);
+
+  // ---- أدوات الجداول ----
+  const T = (head, body, foot) => `<table class="t"><thead><tr>${head.map(h => `<th>${h}</th>`).join('')}</tr></thead>
+    <tbody>${body.map(r => `<tr>${r.map(c => `<td>${c}</td>`).join('')}</tr>`).join('')}</tbody>
+    ${foot ? `<tfoot><tr>${foot.map(c => `<td>${c}</td>`).join('')}</tr></tfoot>` : ''}</table>`;
+  const subList = (g, max) => {
+    const s = [...g.sub.entries()].sort((a, b) => b[1] - a[1]);
+    return s.slice(0, max).map(([k, c]) => `${esc(k)} (${c})`).join('، ') + (s.length > max ? ` <span class="mut">+${s.length - max} أخرى</span>` : '');
+  };
+  const statRow = g => [fmtN(g.n), fmtN(g.closed), fmtN(g.n - g.closed), pctOf(g.n, N)];
+  const totalRow = label => [label, fmtN(N), fmtN(closed), fmtN(open), '100%'];
+  const fig = (id, title, cls) => imgs[id] ? `<figure class="${cls || ''}"><figcaption>${title}</figcaption><img src="${imgs[id]}"></figure>` : '';
+  const kpi = (l, v, s, c) => `<div class="kpi" style="--k:${c}"><div class="l">${l}</div><div class="v">${v}</div><div class="s">${s || '&nbsp;'}</div></div>`;
+
+  let html = `<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8">
+<title>${esc(fileTitle)}</title>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+<style>
+@page{size:A4;margin:14mm 11mm 16mm;
+  @bottom-center{content:"صفحة " counter(page) " من " counter(pages);font:9px Tajawal,sans-serif;color:#777}
+  @bottom-right{content:"تقرير شكاوى العملاء — SPG";font:9px Tajawal,sans-serif;color:#777}
+  @bottom-left{content:"${stamp}";font:9px Tajawal,sans-serif;color:#777}}
+*{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+body{margin:0;background:#e9edf2;color:#1b2430;font-family:Tajawal,"Segoe UI",Tahoma,sans-serif;font-size:11.5px;line-height:1.55}
+.page{max-width:210mm;margin:0 auto;background:#fff;padding:12mm 11mm}
+.bar{position:sticky;top:0;background:#1b2430;color:#fff;padding:10px 16px;display:flex;gap:10px;justify-content:center;align-items:center;z-index:5;font-size:13px}
+.bar button{font:inherit;border:0;border-radius:7px;padding:7px 16px;cursor:pointer;background:#118DFF;color:#fff;font-weight:700}
+.bar button.g{background:#3a4656}
+@media print{body{background:#fff}.bar{display:none}.page{padding:0;max-width:none}}
+.head{display:flex;align-items:center;gap:14px}
+.head img{height:62px}
+.head .tt{flex:1}
+.head h1{margin:0;font-size:22px;font-weight:800;color:#0a3a8a}
+.head .sub{color:#5b6574;font-size:12px}
+.head .per{display:inline-block;margin-top:4px;background:#e8f2fd;color:#0a3a8a;border-radius:6px;padding:2px 10px;font-weight:700;font-size:12px}
+.stamp{border:1px solid #d5dce5;border-radius:8px;padding:6px 12px;text-align:center;min-width:150px}
+.stamp .l{font-size:10px;color:#6b7584}
+.stamp .d{font-weight:800;font-size:13px}
+.band{height:5px;border-radius:3px;margin:10px 0 14px;background:linear-gradient(90deg,#0a3a8a,#1aa0e6 55%,#7bbf2a 80%,#0f9a3a)}
+h2{font-size:15px;color:#0a3a8a;margin:18px 0 8px;padding-bottom:4px;border-bottom:2px solid #e3e8ef;break-after:avoid}
+.info{display:grid;grid-template-columns:150px 1fr 150px 1fr;border:1px solid #dfe4ea;border-radius:8px;overflow:hidden;font-size:11px}
+.info div{padding:5px 9px;border-bottom:1px solid #eef1f5}
+.info .k{background:#f4f6f9;color:#4a5565;font-weight:700}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.kpi{border:1px solid #dfe4ea;border-radius:8px;padding:8px 10px;border-inline-start:4px solid var(--k);break-inside:avoid}
+.kpi .l{color:#6b7584;font-size:10.5px}
+.kpi .v{font-size:21px;font-weight:800;line-height:1.25}
+.kpi .s{color:#6b7584;font-size:10px}
+ul.sum{margin:0;padding-inline-start:18px}
+ul.sum li{margin:3px 0}
+figure{margin:0 0 10px;border:1px solid #dfe4ea;border-radius:8px;padding:8px;break-inside:avoid}
+figcaption{font-weight:700;margin-bottom:4px}
+figure img{width:100%;display:block}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.two figure img{max-height:260px;object-fit:contain}
+table.t{width:100%;border-collapse:collapse;font-size:10.5px;margin-bottom:6px}
+table.t th{background:#0a3a8a;color:#fff;font-weight:700;padding:5px 6px;text-align:start}
+table.t td{padding:4px 6px;border-bottom:1px solid #e6eaf0;vertical-align:top}
+table.t tbody tr:nth-child(even) td{background:#f7f9fc}
+table.t tfoot td{font-weight:800;background:#eef3fa;border-top:2px solid #0a3a8a}
+table.t tr{break-inside:avoid}
+thead{display:table-header-group}
+.mut{color:#8a94a6}
+.hi{color:#d64550;font-weight:700}
+.sec{break-inside:auto}
+.pb{break-before:page}
+.end{text-align:center;color:#8a94a6;margin-top:18px;font-size:11px}
+.sign{display:flex;justify-content:space-between;margin-top:26px;font-size:11.5px}
+.sign div{min-width:200px;border-top:1px solid #b9c2ce;padding-top:4px;text-align:center}
+</style></head><body>
+<div class="bar"><span>معاينة التقرير — اختر <b>حفظ كملف PDF</b> في نافذة الطباعة</span><button onclick="print()">🖨️ حفظ PDF / طباعة</button><button class="g" onclick="close()">إغلاق</button></div>
+<div class="page">
+  <div class="head">
+    <img src="${logo}" alt="SPG">
+    <div class="tt"><h1>تقرير شكاوى العملاء</h1><div class="sub">مجموعة الورق السعودية SPG — إدارة خدمة العملاء</div><div class="per">للفترة ${period}</div></div>
+    <div class="stamp"><div class="l">تاريخ ووقت إصدار التقرير</div><div class="d">${fmtDate(now)}</div><div>${DAYS[now.getDay()]} — ${fmtTime(now)}</div></div>
+  </div>
+  <div class="band"></div>
+
+  <div class="info">
+    <div class="k">الملف المصدر</div><div>${esc(state.meta?.name || '—')}</div>
+    <div class="k">الشيتات المشمولة</div><div>${activeSheets().map(esc).join('، ')}</div>
+    <div class="k">فترة التقرير</div><div><b>${period}</b>${rangeActive() ? '' : ' <span class="mut">(كل البيانات)</span>'}</div>
+    <div class="k">عدد الشكاوى</div><div>${fmtN(N)}</div>
+    <div class="k">الفلاتر المطبقة</div><div style="grid-column:span 3">${fl.length ? fl.map(([k, v]) => `${DIM_LABEL[k]}: <b>${esc(k === 'ym' ? ymLabel(v, true) : v)}</b>`).join(' | ') : (rangeActive() ? 'بدون فلاتر إضافية' : 'بدون فلاتر — جميع البيانات')}</div>
+    ${o.author ? `<div class="k">أعد التقرير</div><div style="grid-column:span 3">${esc(o.author)}</div>` : ''}
+  </div>
+
+  <h2>المؤشرات الرئيسية</h2>
+  <div class="kpis">
+    ${kpi('إجمالي الشكاوى', fmtN(N), `${fmtN(custN)} عميل`, '#118DFF')}
+    ${kpi('منتهية', fmtN(closed), `نسبة الإغلاق ${pctOf(closed, N)}`, '#0a3a8a')}
+    ${kpi('تحت الإجراء', fmtN(open), `${pctOf(open, N)} من الإجمالي`, '#e6a23c')}
+    ${kpi('متوسط مدة الإغلاق', avgDays == null ? '—' : avgDays.toFixed(1) + ' يوم', avgDays == null ? '' : `من ${fmtN(days.length)} شكوى مغلقة`, '#1a9e5c')}
+    ${kpi('شكاوى صحيحة', vRows.length ? fmtN(valid) : '—', vRows.length ? `${pctOf(valid, vRows.length)} من المُقيّمة` : 'لا يوجد تقييم', '#d64550')}
+    ${kpi('شكاوى بها تعويضات', fmtN(comp), pctOf(comp, N), '#744EC2')}
+    ${kpi('أكثر تصنيف', byCat[0] ? esc(byCat[0].v) : '—', byCat[0] ? `${fmtN(byCat[0].n)} شكوى` : '', '#E66C37')}
+    ${kpi('أكثر عميل شكاوى', byCust[0] ? esc(byCust[0].v) : '—', byCust[0] ? `${fmtN(byCust[0].n)} شكوى` : '', '#197278')}
+  </div>
+
+  <h2>الملخص التنفيذي</h2>
+  <ul class="sum">${bullets.map(b => `<li>${b}</li>`).join('')}</ul>`;
+
+  if (o.charts){
+    html += `<h2 class="pb">الرسوم البيانية</h2>
+      ${fig('cCategory', 'عدد الشكاوى حسب تصنيف الشكوى')}
+      <div class="two">${fig('cMonth', 'عدد الشكاوى حسب الشهر')}${fig('cStatus', 'حالة الشكوى')}</div>
+      ${fig('cCustomer', 'عدد الشكاوى حسب اسم العميل')}
+      <div class="two">${fig('cBranch', 'حسب الفرع')}${fig('cDept', 'حسب الإدارة المعنية')}</div>
+      <div class="two">${fig('cAgainst', 'الشكوى ضد')}${fig('cValidity', 'صحة الشكوى')}</div>`;
+  }
+
+  if (o.tables){
+    html += `<h2 class="pb">تحليل الشكاوى حسب التصنيف</h2>
+      ${T(['تصنيف الشكوى', 'العدد', 'منتهية', 'تحت الإجراء', 'النسبة', 'العملاء'],
+        byCat.map(g => [esc(g.v), ...statRow(g), subList(g, 5)]), [...totalRow('الإجمالي'), ''])}
+      <h2>تحليل الشكاوى حسب العميل</h2>
+      ${T(['اسم العميل', 'العدد', 'منتهية', 'تحت الإجراء', 'النسبة', 'تصنيفات الشكاوى'],
+        byCust.map(g => [esc(g.v), ...statRow(g), subList(g, 6)]), [...totalRow('الإجمالي'), ''])}
+      <h2>الشكاوى حسب الشهر</h2>
+      ${T(['الشهر', 'العدد', 'منتهية', 'تحت الإجراء', 'النسبة', 'متوسط مدة الإغلاق (يوم)'],
+        byMonth.map(g => [ymLabel(g.v, multiYear || true), ...statRow(g), avgOf(g.days) == null ? '—' : avgOf(g.days).toFixed(1)]), [...totalRow('الإجمالي'), avgDays == null ? '—' : avgDays.toFixed(1)])}
+      <div class="two">
+        <div><h2>حسب الفرع</h2>${T(['الفرع', 'العدد', 'منتهية', 'تحت الإجراء', 'النسبة'], byBranch.map(g => [esc(g.v), ...statRow(g)]))}</div>
+        <div><h2>حسب الإدارة المعنية</h2>${T(['الإدارة', 'العدد', 'منتهية', 'تحت الإجراء', 'النسبة'], byDept.map(g => [esc(g.v), ...statRow(g)]))}</div>
+      </div>
+      <h2>الشكوى ضد</h2>
+      ${T(['الشكوى ضد', 'العدد', 'منتهية', 'تحت الإجراء', 'النسبة'], byAgainst.map(g => [esc(g.v), ...statRow(g)]))}`;
+  }
+
+  if (o.open){
+    html += `<h2 class="pb">الشكاوى المفتوحة (تحت الإجراء) — ${fmtN(openRows.length)} شكوى</h2>
+      ${openRows.length ? T(['رقم الشكوى', 'الفرع', 'اسم العميل', 'تصنيف الشكوى', 'الإدارة المعنية', 'تاريخ الاستلام', 'عدد الأيام'],
+        openRows.map(({r, age}) => [esc(r.id), esc(r.branch), esc(r.customer), esc(r.category), esc(r.dept), fmtDate(r.dateObj), age == null ? '—' : `<span class="${age > 30 ? 'hi' : ''}">${age}</span>`]))
+        : '<p class="mut">لا توجد شكاوى مفتوحة.</p>'}`;
+  }
+
+  if (o.log){
+    const log = rows.slice().sort((a, b) => (b.dateObj || 0) - (a.dateObj || 0));
+    html += `<h2 class="pb">السجل التفصيلي للشكاوى — ${fmtN(N)} شكوى</h2>
+      ${T(['رقم الشكوى', 'الفرع', 'التاريخ', 'اسم العميل', 'التصنيف', 'الحالة', 'تاريخ الإقفال', 'المدة', 'صحة الشكوى'],
+        log.map(r => [esc(r.id), esc(r.branch), fmtDate(r.dateObj), esc(r.customer), esc(r.category), esc(r.status), fmtDate(r.closeDateObj), r.days ?? '', esc(r.validity)]))}`;
+  }
+
+  html += `<div class="sign"><div>أعد التقرير${o.author ? ': ' + esc(o.author) : ''}</div><div>الاعتماد</div></div>
+    <div class="end">— نهاية التقرير — تم إصداره بتاريخ ${fmtDate(now)} الساعة ${fmtTime(now)} —</div>
+  </div>
+  <script>
+    window.addEventListener('load', function(){
+      (document.fonts ? document.fonts.ready : Promise.resolve()).then(function(){ setTimeout(function(){ window.print(); }, 400); });
+    });
+  <\/script>
+  </body></html>`;
+
+  w.document.open();
+  w.document.write(html);
+  w.document.close();
+}
+
+/* ========================= Events ========================= */
+$('#reportBtn').onclick = reportDialog;
+$('#sheetPicker').addEventListener('change', e => {
+  const c = e.target.closest('input[data-sheet]');
+  if (!c) return;
+  const ex = getExcluded();
+  if (c.checked) ex.delete(c.dataset.sheet); else ex.add(c.dataset.sheet);
+  setExcluded(ex);
+  state.page = 1;
+  applySheets();
+});
+$('#connectBtn').onclick = connect;
+$('#path').addEventListener('keydown', e => { if (e.key === 'Enter') connect(); });
+$('#pickBtn').onclick = pickFile;
+$('#reloadBtn').onclick = () => {
+  if (state.serverMode && !(state.meta && state.meta.local)) loadFromServer();
+  else if (state.handle) loadFromHandle(state.handle, true);
+  else pickFile();
+};
+$('#fileInput').onchange = async e => {
+  const f = e.target.files[0];
+  if (!f) return;
+  ingest(await f.arrayBuffer(), {name: f.name, mtime: f.lastModified / 1000, local: true});
+  e.target.value = '';
+};
+$('#filterGrid').addEventListener('change', e => {
+  const s = e.target.closest('select[data-dim]');
+  if (s) setFilter(s.dataset.dim, s.value);
+});
+$('#chips').addEventListener('click', e => {
+  const b = e.target.closest('[data-clear]');
+  if (!b) return;
+  if (b.dataset.clear === '*'){ state.filters = {}; state.range = {from: '', to: ''}; }
+  else if (b.dataset.clear === 'range') state.range = {from: '', to: ''};
+  else delete state.filters[b.dataset.clear];
+  state.page = 1; renderAll();
+});
+function setRange(rg){ state.range = normRange(rg.from, rg.to); state.page = 1; renderAll(); }
+$('#rPreset').innerHTML = presetOptions();
+$('#rFrom').addEventListener('change', () => setRange({from: $('#rFrom').value, to: $('#rTo').value}));
+$('#rTo').addEventListener('change', () => setRange({from: $('#rFrom').value, to: $('#rTo').value}));
+$('#rPreset').addEventListener('change', e => { if (e.target.value) setRange(presetRange(e.target.value)); });
+$('#rClear').onclick = () => setRange({from: '', to: ''});
+$('#mxSwap').onclick = () => { state.mxSwap = !state.mxSwap; renderMatrix(); };
+let searchT;
+$('#search').addEventListener('input', e => {
+  clearTimeout(searchT);
+  searchT = setTimeout(() => { state.search = e.target.value; state.page = 1; renderTable(); }, 200);
+});
+$('#table').addEventListener('click', e => {
+  const th = e.target.closest('th[data-k]');
+  if (th){
+    const k = th.dataset.k;
+    state.sort = state.sort.key === k ? {key: k, dir: -state.sort.dir} : {key: k, dir: 1};
+    renderTable(); return;
+  }
+  const tr = e.target.closest('tr[data-i]');
+  if (tr) openDetails(+tr.dataset.i);
+});
+$('#openList').addEventListener('click', e => { const tr = e.target.closest('tr[data-i]'); if (tr) openDetails(+tr.dataset.i); });
+$('#pager').addEventListener('click', e => {
+  const b = e.target.closest('[data-pg]');
+  if (!b) return;
+  state.page += b.dataset.pg === 'next' ? 1 : -1; renderTable();
+});
+$('#pager').addEventListener('change', e => {
+  if (e.target.id === 'pageSize'){ state.pageSize = +e.target.value; state.page = 1; renderTable(); }
+});
+$('#exportBtn').onclick = exportExcel;
+$('#modal').addEventListener('click', e => { if (e.target.id === 'modal' || e.target.closest('[data-close]')) $('#modal').classList.remove('show'); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') $('#modal').classList.remove('show'); });
+$('#themeBtn').onclick = () => {
+  const cur = document.documentElement.dataset.theme
+    || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+  const next = cur === 'dark' ? 'light' : 'dark';
+  document.documentElement.dataset.theme = next;
+  try { localStorage.setItem('cs-theme', next); } catch(_){}
+  renderAll();
+};
+let resizeT;
+window.addEventListener('resize', () => { clearTimeout(resizeT); resizeT = setTimeout(() => stackedChart('cCustomer', 'customer', {box: 'custBox', minPer: 34}), 250); });
+
+init();
+</script>
+</body>
+</html>
